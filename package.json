@@ -1,0 +1,23 @@
+{
+  "name": "bizi-dns",
+  "version": "0.0.0",
+  "description": "bizi.ly name server",
+  "main": "app.js",
+  "scripts": {
+    "artifactregistry-login": "npx google-artifactregistry-auth",
+    "test": "mocha"
+  },
+  "author": "hostmaster@bizi.ly",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^3.2.4",
+    "callsite": "^1.0.0",
+    "debug": "^4.3.4",
+    "dotenv": "^16.0.3",
+    "lodash": "^4.17.21",
+    "minimatch": "^5.1.2",
+    "mongoose": "^6.8.1",
+    "named-server": "github:artur99/named-server",
+    "qs": "^6.11.0"
+  }
+}
