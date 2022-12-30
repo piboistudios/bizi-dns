@@ -8,6 +8,6 @@ spec:
   selector:
     app: {{ packageJson.name }}
   ports:
-  - protocol: TCP
+  - protocol: UDP
     port: 53
     targetPort: 53
