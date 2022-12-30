@@ -43,13 +43,13 @@ steps:
       - "--build-arg"
       - "PORT=${_PORT}"
       - "-t"
-      - "us-central1-docker.pkg.dev/$PROJECT_ID/bizi-docker-images/bizi-graph:$SHORT_SHA"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/bizi-docker-images/bizi-dns:$SHORT_SHA"
       - "."
   - name: "gcr.io/cloud-builders/docker"
     args:
       [
         "push",
-        "us-central1-docker.pkg.dev/$PROJECT_ID/bizi-docker-images/bizi-graph:$SHORT_SHA",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/bizi-docker-images/bizi-dns:$SHORT_SHA",
       ]
   - name: "gcr.io/cloud-builders/gke-deploy"
     args:
@@ -58,4 +58,4 @@ steps:
       - --location=us-central1-a
       - --cluster=$BRANCH_NAME-$PROJECT_ID
 images:
-  - "us-central1-docker.pkg.dev/$PROJECT_ID/bizi-docker-images/bizi-graph:$SHORT_SHA"
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/bizi-docker-images/bizi-dns:$SHORT_SHA"

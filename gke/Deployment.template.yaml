@@ -28,7 +28,7 @@ spec:
           ports:
             - name: http
               protocol: TCP
-              containerPort: 8081
+              containerPort: 53
           volumeMounts:
             - mountPath: /app/ssl
               name: temp-ssl
