@@ -11,6 +11,6 @@ spec:
   - protocol: UDP
     port: 5333
     targetPort: 5333
-  - protocol: TCP
-    port: 5333
-    targetPort: 5333
+  # - protocol: TCP
+    # port: 5333
+    # targetPort: 5333

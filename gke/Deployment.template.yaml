@@ -28,10 +28,10 @@ spec:
           ports:
             - name: dns
               protocol: UDP
-              containerPort: 5333
-            - name: dns-tcp
-              protocol: TCP
-              containerPort: 5333
+              containerPort: 53
+            # - name: dns-tcp
+            #   protocol: TCP
+            #   containerPort: 53
           volumeMounts:
             - mountPath: /app/ssl
               name: temp-ssl

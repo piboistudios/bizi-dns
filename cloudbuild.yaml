@@ -34,7 +34,7 @@ steps:
       - '--set-env="DB_NAME=${_DB_NAME}"'
       - '--set-env="DB_AUTH_SOURCE=${_DB_AUTH_SOURCE}"'
       - '--set-env="DEBUG_DEPTH=${_DEBUG_DEPTH"'
-      - '--set-env="PORT=5333"'
+      - '--set-env="PORT=53"'
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "build"
