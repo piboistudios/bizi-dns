@@ -26,8 +26,8 @@ spec:
         - name: {{ packageJson.name }}
           image: us-central1-docker.pkg.dev/{{ projectId }}/bizi-docker-images/{{ packageJson.name}}:{{tag}}
           ports:
-            - name: http
-              protocol: TCP
+            - name: dns
+              protocol: UDP
               containerPort: 53
           volumeMounts:
             - mountPath: /app/ssl
