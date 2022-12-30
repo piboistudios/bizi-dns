@@ -9,8 +9,8 @@ spec:
     app: {{ packageJson.name }}
   ports:
   - protocol: UDP
-    port: 53
-    targetPort: 53
+    port: 5333
+    targetPort: 5333
   - protocol: TCP
-    port: 53
-    targetPort: 53
+    port: 5333
+    targetPort: 5333
