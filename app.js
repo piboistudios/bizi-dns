@@ -46,7 +46,7 @@ async function main() {
                 logger.debug("DNS Zone record:", dnsZone);
                 return server.send(query);
             }
-            const result = ['MX', 'NS'].indexOf(dnsRecordset.resourceType) === -1 && _.sample(dnsRecordset.records.map(r => r.value));
+            const result = ['TXT', 'MX', 'NS'].indexOf(dnsRecordset.resourceType) === -1 && _.sample(dnsRecordset.records.map(r => r.value));
             const ttl = dnsRecordset.ttl;
             logger.debug("Recordest:", dnsRecordset);
             switch (dnsRecordset.resourceType) {
@@ -110,8 +110,10 @@ async function main() {
                 }
                 case 'TXT': {
 
-                    const record = new named.TXTRecord(result);
-                    query.addAnswer(domain, record, ttl);
+                    dnsRecordset.records.forEach((result) => {
+                        const record = new named.TXTRecord(result.value);
+                        query.addAnswer(domain, record, ttl);
+                    });
                     break;
                 }
             }
