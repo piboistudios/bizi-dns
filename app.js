@@ -46,7 +46,7 @@ async function main() {
                 logger.debug("DNS Zone record:", dnsZone);
                 return server.send(query);
             }
-            const result = type !== 'MX' && _.sample(dnsRecordset.records.map(r => r.value));
+            const result = ['MX', 'NS'].indexOf(dnsRecordset.resourceType) === -1 && _.sample(dnsRecordset.records.map(r => r.value));
             const ttl = dnsRecordset.ttl;
             logger.debug("Recordest:", dnsRecordset);
             switch (dnsRecordset.resourceType) {
