@@ -48,6 +48,7 @@ async function main() {
             }
             const result = type !== 'MX' && _.sample(dnsRecordset.records.map(r => r.value));
             const ttl = dnsRecordset.ttl;
+            logger.debug("Recordest:", dnsRecordset);
             switch (dnsRecordset.resourceType) {
                 case 'A': {
 
@@ -68,9 +69,8 @@ async function main() {
                     break;
                 }
                 case 'NS': {
-
                     dnsRecordset.records.forEach((result) => {
-                        const record = new named.NSRecord(result);
+                        const record = new named.NSRecord(result.value);
                         query.addAnswer(domain, record, ttl);
                     });
                     break;
@@ -78,7 +78,7 @@ async function main() {
                 case 'MX': {
 
                     dnsRecordset.records.forEach((result, index) => {
-                        const record = new named.MXRecord(result, {
+                        const record = new named.MXRecord(result.value, {
                             priority: index
                         });
                         query.addAnswer(domain, record, ttl);
