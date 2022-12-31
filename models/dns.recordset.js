@@ -4,12 +4,12 @@ var mongoose = require('mongoose')
 
 var schema = new mongoose.Schema({
     stub: String,
-    zone: { ref: "DnsZone", type: ObjectId },
+    zone: { ref: "dns.Zone", type: ObjectId },
     resourceType: {
         type: String,
-        enum: ['A', 'AAAA', 'MX', 'CNAME', 'SOA', 'SRV', 'TXT']
+        enum: ['A', 'AAAA', 'MX', 'CNAME', 'SOA', 'SRV', 'TXT', 'NS']
     },
-    ttl: { type: Number, default: 300 },
+    ttl: Number,
     records: [{ value: String, weight: Number }],
     routingPolicy: Number
 });
@@ -25,7 +25,7 @@ schema.pre('save', async function (next) {
         zone,
         resourceType
     });
-    if (existing) {
+    if (existing && existing.id !== this.id) {
         return next(new Error("Duplicate record (stub, zone, resourceType)"));
     }
 })

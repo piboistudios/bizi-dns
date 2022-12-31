@@ -7,7 +7,7 @@ function parseName(domain) {
     const nameParts = domain.split('.');
     const tld = nameParts.pop();
     const host = nameParts.pop();
-    const stub = nameParts.join('.');
+    const stub = nameParts.length ? nameParts.join('.') : undefined;
     const zone = `${host}.${tld}`;
     return { stub, zone };
 }
@@ -67,6 +67,14 @@ async function main() {
                     query.addAnswer(domain, record, ttl);
                     break;
                 }
+                case 'NS': {
+
+                    dnsRecordset.records.forEach((result) => {
+                        const record = new named.NSRecord(result);
+                        query.addAnswer(domain, record, ttl);
+                    });
+                    break;
+                }
                 case 'MX': {
 
                     dnsRecordset.records.forEach((result, index) => {
@@ -78,8 +86,20 @@ async function main() {
                     break;
                 }
                 case 'SOA': {
-
-                    const record = new named.SOARecord(result);
+                    const soaParts = result.split(' ');
+                    if (!soaParts.length === 7) {
+                        logger.error("Invalid SOA Record:", { result, soaParts, dnsRecordset, dnsZone });
+                        break;
+                    }
+                    let [host, admin, serial, refresh, retry, expire, min] = soaParts;
+                    const record = new named.SOARecord(host, {
+                        admin,
+                        serial,
+                        refresh,
+                        retry,
+                        expire,
+                        ttl: Number(min)
+                    });
                     query.addAnswer(domain, record, ttl);
                     break;
                 }
