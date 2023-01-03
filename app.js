@@ -170,7 +170,7 @@ async function main() {
                         break;
                     }
                 }
-                send(response)
+                // send(response)
                 // response.answers.push({
                 //     name,
                 //     type: Packet.TYPE.SOA,
@@ -188,6 +188,8 @@ async function main() {
                 logger.fatal("DNS Query failed:", e);
                 send(response)
             }
+            response.header.aa = 1;
+
             send(response);
         }
     });
