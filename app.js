@@ -40,7 +40,7 @@ async function main() {
 
                 const { zone, stub } = parseName(domain);
                 const dnsZone = await DnsZone.findOne({
-                    dnsName: zone,
+                    dnsName: new RegExp(zone, 'i'),
                 });
                 if (!dnsZone) {
                     logger.error("No DNS Zone found:", { zone, stub });
@@ -48,7 +48,7 @@ async function main() {
                 }
                 const dnsRecordset = await DnsRecordset.findOne({
                     zone: dnsZone.id,
-                    stub,
+                    stub: stub && new RegExp(stub, 'i'),
                     resourceType: type,
                 });
                 if (!dnsRecordset) {
