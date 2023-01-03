@@ -1,3 +1,5 @@
+const dns2 = require('dns2');
+
 const { mkLogger } = require('./logger');
 const DnsZone = require('./models/dns.zone');
 const DnsRecordset = require('./models/dns.recordset');
@@ -8,131 +10,223 @@ function parseName(domain) {
     const tld = nameParts.pop();
     const host = nameParts.pop();
     const stub = nameParts.length ? nameParts.join('.') : undefined;
-    const zone = `${host}.${tld}`;
+    const zone = [host, tld].filter(Boolean).join('.');
     return { stub, zone };
 }
+const { Packet } = dns2;
+
+const TYPE_NAMES = Object.fromEntries(Object.entries(Packet.TYPE).map(e => [e[1], e[0]]));
+logger.debug({ TYPE_NAMES });
 async function main() {
-    const named = require('named-server');
-    const server = named.createServer();
-    const port = process.env.PORT || 53;
-    server.listen(port, '0.0.0.0', function () {
-        logger.info('😎 DNS server started on port', port);
-    });
-
-    server.on('query', async function (query) {
-        try {
 
 
-            const domain = query.name()
-            const type = query.type();
-            // const DEFAULT_TTL = 300;
-            logger.info('DNS Query: (%s) %s', type, domain);
+    const server = dns2.createServer({
+        udp: true,
+        tcp: true,
+        handle: async (request, send, rinfo) => {
+            logger.info("Got a request:", request);
+            const response = Packet.createResponseFromRequest(request);
+            const [question] = request.questions;
+            logger.debug("Got question:", question);
+            const { name } = question;
+            const type = TYPE_NAMES[question.type];
+            logger.debug("Resource type?", type);
+            try {
 
-            const { zone, stub } = parseName(domain);
-            const dnsZone = await DnsZone.findOne({
-                dnsName: zone,
-            });
-            if (!dnsZone) {
-                logger.error("No DNS Zone found:", { zone, stub });
-                return server.send(query);
-            }
-            const dnsRecordset = await DnsRecordset.findOne({
-                zone: dnsZone.id,
-                stub,
-                resourceType: type,
-            });
-            if (!dnsRecordset) {
-                logger.error("No DNS Recordset found:", { zone, stub });
-                logger.debug("DNS Zone record:", dnsZone);
-                return server.send(query);
-            }
-            const result = ['TXT', 'MX', 'NS'].indexOf(dnsRecordset.resourceType) === -1 && _.sample(dnsRecordset.records.map(r => r.value));
-            const ttl = dnsRecordset.ttl;
-            logger.debug("Recordest:", dnsRecordset);
-            switch (dnsRecordset.resourceType) {
-                case 'A': {
 
-                    const record = new named.ARecord(result);
-                    query.addAnswer(domain, record, ttl);
-                    break;
+                const domain = name
+                // const DEFAULT_TTL = 300;
+                logger.info('DNS Query: (%s) %s', type, domain);
+
+                const { zone, stub } = parseName(domain);
+                const dnsZone = await DnsZone.findOne({
+                    dnsName: zone,
+                });
+                if (!dnsZone) {
+                    logger.error("No DNS Zone found:", { zone, stub });
+                    return send(response)
                 }
-                case 'AAAA': {
+                const dnsRecordset = await DnsRecordset.findOne({
+                    zone: dnsZone.id,
+                    stub,
+                    resourceType: type,
+                });
+                if (!dnsRecordset) {
+                    logger.error("No DNS Recordset found:", { zone, stub });
+                    logger.debug("DNS Zone record:", dnsZone);
+                    return send(response)
+                }
+                const result = ['TXT', 'MX', 'NS'].indexOf(dnsRecordset.resourceType) === -1 && _.sample(dnsRecordset.records.map(r => r.value));
+                const ttl = dnsRecordset.ttl;
+                logger.debug("Recordest:", dnsRecordset);
+                switch (dnsRecordset.resourceType) {
+                    case 'A': {
 
-                    const record = new named.AAAARecord(result);
-                    query.addAnswer(domain, record, ttl);
-                    break;
-                }
-                case 'CNAME': {
-
-                    const record = new named.CNAMERecord(result);
-                    query.addAnswer(domain, record, ttl);
-                    break;
-                }
-                case 'NS': {
-                    dnsRecordset.records.forEach((result) => {
-                        const record = new named.NSRecord(result.value);
-                        query.addAnswer(domain, record, ttl);
-                    });
-                    break;
-                }
-                case 'MX': {
-
-                    dnsRecordset.records.forEach((result, index) => {
-                        const record = new named.MXRecord(result.value, {
-                            priority: index
-                        });
-                        query.addAnswer(domain, record, ttl);
-                    });
-                    break;
-                }
-                case 'SOA': {
-                    const soaParts = result.split(' ');
-                    if (!soaParts.length === 7) {
-                        logger.error("Invalid SOA Record:", { result, soaParts, dnsRecordset, dnsZone });
+                        response.answers.push({
+                            name,
+                            type: question.type,
+                            class: Packet.CLASS.IN,
+                            ttl,
+                            address: result
+                        })
                         break;
                     }
-                    let [host, admin, serial, refresh, retry, expire, min] = soaParts;
-                    const record = new named.SOARecord(host, {
-                        admin,
-                        serial,
-                        refresh,
-                        retry,
-                        expire,
-                        ttl: Number(min)
-                    });
-                    query.addAnswer(domain, record, ttl);
-                    break;
-                }
-                case 'SRV': {
-                    const record = new named.SRVRecord(result);
-                    query.addAnswer(domain, record, ttl);
-                    break;
-                }
-                case 'TXT': {
+                    case 'AAAA': {
 
-                    dnsRecordset.records.forEach((result) => {
-                        const record = new named.TXTRecord(result.value);
-                        query.addAnswer(domain, record, ttl);
-                    });
-                    break;
+                        response.answers.push({
+                            name,
+                            type: question.type,
+                            class: Packet.CLASS.IN,
+                            ttl,
+                            address
+                        })
+                        break;
+                    }
+                    case 'CNAME': {
+
+                        response.answers.push({
+                            name,
+                            type: question.type,
+                            class: Packet.CLASS.IN,
+                            ttl,
+                            domain: result
+                        })
+                        break;
+                    }
+                    case 'NS': {
+                        dnsRecordset.records.forEach((result) => {
+                            response.answers.push({
+                                name,
+                                type: question.type,
+                                class: Packet.CLASS.IN,
+                                ttl,
+                                ns: result.value
+                            })
+                        });
+                        break;
+                    }
+                    case 'MX': {
+
+                        dnsRecordset.records.forEach((result, index) => {
+                            response.answers.push({
+                                name,
+                                type: question.type,
+                                class: Packet.CLASS.IN,
+                                ttl,
+                                priority: index,
+                                exchange: result.valuer
+
+                            })
+                        });
+                        break;
+                    }
+                    case 'SOA': {
+                        const soaParts = result.split(' ');
+                        if (!soaParts.length === 7) {
+                            logger.error("Invalid SOA Record:", { result, soaParts, dnsRecordset, dnsZone });
+                            break;
+                        }
+                        let [primary, admin, serial, refresh, retry, expiration, min] = soaParts;
+                        // const record = new named.SOARecord(host, {
+
+                        // });
+                        response.answers.push({
+                            name,
+                            type: question.type,
+                            class: Packet.CLASS.IN,
+                            primary,
+                            ttl,
+                            admin,
+                            serial,
+                            refresh,
+                            retry,
+                            expiration,
+                            minimum: Number(min)
+                        })
+                        break;
+                    }
+                    case 'SRV': {
+                        // response.answers.push({
+                        //     name,
+                        //     type: question.type,
+                        //     class: Packet.CLASS.IN,
+                        //     ttl,
+                        //     target: result
+                        // })
+                        throw "not implemented";
+                        break;
+                    }
+                    case 'TXT': {
+
+                        dnsRecordset.records.forEach((result) => {
+                            response.answers.push({
+                                name,
+                                type: question.type,
+                                class: Packet.CLASS.IN,
+                                ttl,
+                                data: result.value
+                            })
+                        });
+                        break;
+                    }
                 }
+                send(response)
+                // response.answers.push({
+                //     name,
+                //     type: Packet.TYPE.SOA,
+                //     class: Packet.CLASS.IN,
+                //     ttl: 300,
+                //     primary: 
+                //     serial: 2,
+                //     refresh: 28000,
+                //     retry: 3600,
+                //     expiration: 259200,
+                //     minimum: 300
+                // });
             }
-            server.send(query);
+            catch (e) {
+                logger.fatal("DNS Query failed:", e);
+                send(response)
+            }
+            send(response);
         }
-        catch (e) {
-            logger.fatal("DNS Query failed:", e);
-            server.send(query);
-        }
     });
 
-    server.on('clientError', function (error) {
-        logger.info("there was a clientError: %s", error);
+    server.on('request', (request, response, rinfo) => {
+        console.log(request.header.id, request.questions[0]);
     });
 
-    server.on('uncaughtException', function (error) {
-        logger.info("there was an excepton: %s", error);
+    server.on('requestError', (error) => {
+        console.log('Client sent an invalid request', error);
     });
 
+    server.on('listening', () => {
+        console.log(server.addresses());
+    });
+
+    server.on('close', () => {
+        console.log('server closed');
+    });
+    const port = process.env.PORT || 53;
+
+    server.listen({
+        // Optionally specify port, address and/or the family of socket() for udp server:
+        udp: {
+            port,
+            address: "0.0.0.0",
+            // address: "127.0.0.1",
+            type: "udp4",  // IPv4 or IPv6 (Must be either "udp4" or "udp6")
+        },
+
+        // Optionally specify port and/or address for tcp server:
+        tcp: {
+            port,
+            // address: "127.0.0.1",
+        },
+    });
+
+    // eventually
+    // server.close();
 }
 
 module.exports = main;
