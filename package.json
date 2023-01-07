@@ -12,7 +12,7 @@
   "dependencies": {
     "async": "^3.2.4",
     "callsite": "^1.0.0",
-    "debug": "^4.3.4",
+    "debug": "github:calvintwr/debug",
     "dns2": "^2.0.5",
     "dotenv": "^16.0.3",
     "lodash": "^4.17.21",
