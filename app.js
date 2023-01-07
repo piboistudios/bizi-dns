@@ -195,19 +195,20 @@ async function main() {
     });
 
     server.on('request', (request, response, rinfo) => {
-        console.log(request.header.id, request.questions[0]);
+        logger.debug(request.header.id, request.questions[0]);
+        logger.debug(rinfo);
     });
 
     server.on('requestError', (error) => {
-        console.log('Client sent an invalid request', error);
+        logger.debug('Client sent an invalid request', error);
     });
 
     server.on('listening', () => {
-        console.log(server.addresses());
+        logger.debug(server.addresses());
     });
 
     server.on('close', () => {
-        console.log('server closed');
+        logger.debug('server closed');
     });
     const port = process.env.PORT || 53;
 
