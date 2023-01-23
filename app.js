@@ -114,7 +114,7 @@ async function main() {
                                 class: Packet.CLASS.IN,
                                 ttl,
                                 priority: index,
-                                exchange: result.valuer
+                                exchange: result.value
 
                             })
                         });
