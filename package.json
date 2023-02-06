@@ -19,7 +19,7 @@
     "minimatch": "^5.1.2",
     "mongoose": "^6.8.1",
     "named-server": "github:artur99/named-server",
-    "qs": "^6.11.0",
-    "tldts": "^5.7.105"
+    "parse-domains": "^2.0.3",
+    "qs": "^6.11.0"
   }
 }
