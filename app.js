@@ -5,14 +5,7 @@ const DnsZone = require('./models/dns.zone');
 const DnsRecordset = require('./models/dns.recordset');
 const _ = require('lodash');
 const logger = mkLogger('app');
-function parseName(domain) {
-    const nameParts = domain.split('.');
-    const tld = nameParts.pop();
-    const host = nameParts.pop();
-    const stub = nameParts.length ? nameParts.join('.') : undefined;
-    const zone = [host, tld].filter(Boolean).join('.');
-    return { stub, zone };
-}
+const tldts = require('tldts');
 const { Packet } = dns2;
 
 const TYPE_NAMES = Object.fromEntries(Object.entries(Packet.TYPE).map(e => [e[1], e[0]]));
@@ -38,13 +31,18 @@ async function main() {
                 // const DEFAULT_TTL = 300;
                 logger.info('DNS Query: (%s) %s', type, domain);
 
-                const { zone, stub } = parseName(domain);
+                const parsed = tldts.parse(domain);
+                const zone = parsed.domain;
+                let stub = parsed.stub;
                 const dnsZone = await DnsZone.findOne({
-                    dnsName: new RegExp(zone, 'i'),
+                    dnsName: [new RegExp(zone, 'i'),new RegExp(name, 'i')]
                 });
                 if (!dnsZone) {
                     logger.error("No DNS Zone found:", { zone, stub });
                     return send(response)
+                }
+                if(dnsZone.dnsName === name) {
+                    stub = undefined;
                 }
                 const dnsRecordset = await DnsRecordset.findOne({
                     zone: dnsZone.id,
