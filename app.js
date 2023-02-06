@@ -34,8 +34,9 @@ async function main() {
                 const parsed = tldts.parse(domain);
                 const zone = parsed.domain;
                 let stub = parsed.stub;
+                const regexStrict = v => `^${v}$`;
                 const dnsZone = await DnsZone.findOne({
-                    dnsName: [new RegExp(zone, 'i'),new RegExp(name, 'i')]
+                    dnsName: [new RegExp(regexStrict(zone), 'i'),new RegExp(regexStrict(name), 'i')]
                 });
                 if (!dnsZone) {
                     logger.error("No DNS Zone found:", { zone, stub });
@@ -46,7 +47,7 @@ async function main() {
                 }
                 const dnsRecordset = await DnsRecordset.findOne({
                     zone: dnsZone.id,
-                    stub: stub && new RegExp(stub, 'i'),
+                    stub: stub && new RegExp(regexStrict(stub), 'i'),
                     resourceType: type,
                 });
                 if (!dnsRecordset) {
