@@ -38,7 +38,7 @@ async function main() {
                 const dnsZones = await DnsZone.find({
                     dnsName: new RegExp(`((${stub}\.)|^)` + zone + '$', 'i')
                 });
-                if (!dnsZones, length) {
+                if (!dnsZones.length) {
                     logger.error("No DNS Zone found:", { zone, stub });
                     return send(response)
                 }
