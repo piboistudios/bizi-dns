@@ -35,21 +35,23 @@ async function main() {
                 let stub = parsed.subdomain;
                 logger.debug({ name, domain, parsed, zone, stub })
                 const regexStrict = v => `^${v}$`;
-                const dnsZone = await DnsZone.findOne({
-                    dnsName: [new RegExp(regexStrict(zone), 'i'), new RegExp(regexStrict(name), 'i')]
+                const dnsZones = await DnsZone.find({
+                    dnsName: new RegExp(`((${stub}\.)|^)` + zone + '$', 'i')
                 });
-                if (!dnsZone) {
+                if (!dnsZones,length) {
                     logger.error("No DNS Zone found:", { zone, stub });
                     return send(response)
                 }
-                logger.debug("dnsZone:", dnsZone.toJSON());
-                if (dnsZone.dnsName === name) {
-                    stub = undefined;
-                }
-                const dnsRecordset = await DnsRecordset.findOne({
-                    zone: dnsZone.id,
-                    stub: stub && new RegExp(regexStrict(stub), 'i'),
-                    resourceType: type,
+                logger.debug("dnsZone:", dnsZones.map(d => d.toJSON()));
+                const dnsRecordsets = await DnsRecordset.find({
+                    $or: dnsZones.map(z => {
+                        const searchStub = z.dnsName.indexOf(stub) === 0 ? undefined : stub;
+                        return {
+                            stub: searchStub,
+                            zone: z.id,
+                            resourceType: type
+                        }
+                    })
                 });
                 if (!dnsRecordset) {
                     logger.error("No DNS Recordset found:", { zone, stub });
