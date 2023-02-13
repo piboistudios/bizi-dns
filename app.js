@@ -38,7 +38,7 @@ async function main() {
                 const dnsZones = await DnsZone.find({
                     dnsName: new RegExp(`((${stub}\.)|^)` + zone + '$', 'i')
                 });
-                if (!dnsZones,length) {
+                if (!dnsZones, length) {
                     logger.error("No DNS Zone found:", { zone, stub });
                     return send(response)
                 }
@@ -53,11 +53,13 @@ async function main() {
                         }
                     })
                 });
+                const dnsRecordset = dnsRecordsets[0];
                 if (!dnsRecordset) {
                     logger.error("No DNS Recordset found:", { zone, stub });
                     logger.debug("DNS Zone record:", dnsZone);
                     return send(response)
                 }
+                dnsRecordset.records = dnsRecordsets.flatMap(d => d.records);
                 const result = ['TXT', 'MX', 'NS'].indexOf(dnsRecordset.resourceType) === -1 && _.sample(dnsRecordset.records.map(r => r.value));
                 const ttl = dnsRecordset.ttl;
                 logger.debug("Recordest:", dnsRecordset);
