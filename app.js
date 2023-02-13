@@ -56,7 +56,7 @@ async function main() {
                 const dnsRecordset = dnsRecordsets[0];
                 if (!dnsRecordset) {
                     logger.error("No DNS Recordset found:", { zone, stub });
-                    logger.debug("DNS Zone record:", dnsZone);
+                    logger.debug("DNS Zone record:", dnsZones);
                     return send(response)
                 }
                 dnsRecordset.records = dnsRecordsets.flatMap(d => d.records);
